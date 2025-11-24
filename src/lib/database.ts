@@ -19,10 +19,6 @@ async function disconnect() {
   await prisma.$disconnect();
 }
 
-process.on('beforeExit', () => {
-  void disconnect();
-});
-
 process.on('SIGINT', () => {
   disconnect()
     .then(() => {
@@ -46,3 +42,4 @@ process.on('SIGTERM', () => {
       process.exit(1);
     });
 });
+
