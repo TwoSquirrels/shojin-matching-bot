@@ -1,4 +1,5 @@
 import { Events, Interaction, ChatInputCommandInteraction, Client, Collection } from 'discord.js';
+import { prisma } from '../lib/database.js';
 
 interface Command {
   data: {
@@ -25,9 +26,14 @@ export default {
       return;
     }
 
+    let success = true;
+    let errorMessage: string | undefined;
+
     try {
       await command.execute(interaction);
     } catch (error) {
+      success = false;
+      errorMessage = error instanceof Error ? error.message : String(error);
       console.error('Error executing command:', error);
 
       const reply = {
@@ -39,6 +45,21 @@ export default {
         await interaction.followUp(reply);
       } else {
         await interaction.reply(reply);
+      }
+    } finally {
+      // Log command usage to database
+      try {
+        await prisma.commandLog.create({
+          data: {
+            commandName: interaction.commandName,
+            userId: interaction.user.id,
+            guildId: interaction.guildId,
+            success,
+            error: errorMessage,
+          },
+        });
+      } catch (logError) {
+        console.error('Failed to log command usage:', logError);
       }
     }
   },

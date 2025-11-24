@@ -12,6 +12,7 @@
 - **Package Manager**: pnpm
 - **Language**: TypeScript 5.x
 - **Framework**: discord.js v14
+- **Database**: MongoDB + Prisma ORM
 - **Code Quality**: ESLint + Prettier
 - **Development**: tsx (TypeScript runner with hot reload)
 
@@ -21,6 +22,7 @@
 
 - Node.js 18.0.0 以上
 - pnpm (インストールされていない場合: `npm install -g pnpm`)
+- MongoDB (ローカルまたは MongoDB Atlas)
 
 ### インストール
 
@@ -40,7 +42,30 @@ pnpm install
 cp .env.example .env
 ```
 
-`.env` ファイルを編集して、Discord Bot のトークンとクライアント ID を設定してください。
+`.env` ファイルを編集して、Discord Bot のトークンとクライアント ID、そして MongoDB の接続 URL を設定してください。
+
+### MongoDB のセットアップ
+
+#### ローカル MongoDB を使用する場合
+
+1. MongoDB をインストール（まだの場合）
+2. MongoDB を起動
+3. `.env` ファイルの `DATABASE_URL` を以下のように設定:
+```
+DATABASE_URL=mongodb://localhost:27017/shojin-matching-bot
+```
+
+#### MongoDB Atlas を使用する場合
+
+1. [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) でアカウントを作成
+2. 無料の M0 クラスターを作成
+3. Database Access でユーザーを作成
+4. Network Access で IP アドレスを許可（開発時は 0.0.0.0/0 で全て許可可能）
+5. Cluster の「Connect」から接続文字列を取得
+6. `.env` ファイルの `DATABASE_URL` に接続文字列を設定:
+```
+DATABASE_URL=mongodb+srv://username:password@cluster.mongodb.net/shojin-matching-bot?retryWrites=true&w=majority
+```
 
 ### Discord Bot の作成
 
@@ -54,6 +79,23 @@ cp .env.example .env
    - SERVER MEMBERS INTENT (必要に応じて)
 
 ## 使用方法
+
+### データベースのセットアップ
+
+初回セットアップ時に Prisma Client を生成:
+```bash
+pnpm db:generate
+```
+
+データベーススキーマを MongoDB に同期:
+```bash
+pnpm db:push
+```
+
+Prisma Studio でデータベースを GUI で管理:
+```bash
+pnpm db:studio
+```
 
 ### 開発モード
 
@@ -108,12 +150,17 @@ pnpm format:check
 
 ```
 shojin-matching-bot/
+├── prisma/
+│   └── schema.prisma     # Prisma スキーマ定義
 ├── src/
 │   ├── commands/         # スラッシュコマンド
-│   │   └── ping.ts       # サンプルコマンド
+│   │   ├── ping.ts       # サンプルコマンド
+│   │   └── stats.ts      # ユーザー統計コマンド
 │   ├── events/           # Discord イベントハンドラー
 │   │   ├── ready.ts      # Bot 起動時のイベント
 │   │   └── interactionCreate.ts  # インタラクション処理
+│   ├── lib/              # ライブラリ
+│   │   └── database.ts   # Prisma クライアント設定
 │   ├── utils/            # ユーティリティ関数
 │   │   └── loader.ts     # モジュールローダー
 │   ├── config.ts         # 設定ファイル
@@ -122,11 +169,29 @@ shojin-matching-bot/
 ├── dist/                 # ビルド出力 (gitignore)
 ├── .env                  # 環境変数 (gitignore)
 ├── .env.example          # 環境変数のサンプル
+├── prisma.config.ts      # Prisma 設定
 ├── eslint.config.js      # ESLint 設定
 ├── .prettierrc           # Prettier 設定
 ├── tsconfig.json         # TypeScript 設定
 └── package.json          # プロジェクト設定
 ```
+
+## データベースモデル
+
+プロジェクトには以下のデータモデルが含まれています：
+
+### Guild (サーバー設定)
+- Discord サーバーごとの設定を保存
+- JSON フィールドでカスタム設定を柔軟に保存可能
+
+### User (ユーザーデータ)
+- Discord ユーザーごとのデータを保存
+- JSON フィールドでユーザー固有のデータを保存可能
+
+### CommandLog (コマンド使用ログ)
+- コマンドの実行履歴を記録
+- 統計分析やデバッグに使用可能
+- `stats` コマンドで自分の使用統計を確認できます
 
 ## コマンドの追加方法
 

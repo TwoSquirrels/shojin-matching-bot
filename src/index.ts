@@ -7,6 +7,7 @@ import {
 } from 'discord.js';
 import { config } from './config.js';
 import { loadModules } from './utils/loader.js';
+import { prisma } from './lib/database.js';
 
 interface Command {
   data: {
@@ -30,6 +31,17 @@ declare module 'discord.js' {
 }
 
 async function main() {
+  // Test database connection
+  console.log('🔌 Connecting to database...');
+  try {
+    await prisma.$connect();
+    console.log('✅ Database connected successfully');
+  } catch (error) {
+    console.error('❌ Failed to connect to database:', error);
+    console.error('   Make sure MongoDB is running and DATABASE_URL is configured correctly');
+    process.exit(1);
+  }
+
   // Create a new client instance
   const client = new Client({
     intents: [

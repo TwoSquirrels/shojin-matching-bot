@@ -142,3 +142,5 @@ vite.config.ts.timestamp-*
 pnpm-lock.yaml
 .pnpm-debug.log
 
+
+/src/generated/prisma
