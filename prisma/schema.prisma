@@ -1,0 +1,54 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+}
+
+// Discord Guild (Server) settings
+model Guild {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  guildId   String   @unique // Discord Guild ID
+  name      String
+  settings  Json?    // Store guild-specific settings
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("guilds")
+}
+
+// Discord User data
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @unique // Discord User ID
+  username  String
+  data      Json?    // Store user-specific data
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// Example: Store command usage statistics
+model CommandLog {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  commandName String
+  userId      String   // Discord User ID
+  guildId     String?  // Discord Guild ID (null for DMs)
+  timestamp   DateTime @default(now())
+  success     Boolean  @default(true)
+  error       String?
+
+  @@map("command_logs")
+  @@index([commandName])
+  @@index([userId])
+  @@index([timestamp])
+}
+
